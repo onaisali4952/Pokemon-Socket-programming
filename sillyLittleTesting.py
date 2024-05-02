@@ -27,3 +27,8 @@ for pokemon in [pikachu, charmander, squirtle, bulbasaur]:
     for move in pokemon.moves:
         print(f"- {move.name}")
     print()
+
+response = ""
+i = 1
+response += f"{i}"
+print(response)
