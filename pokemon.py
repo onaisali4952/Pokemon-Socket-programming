@@ -1,3 +1,5 @@
+import random
+
 def intput(prompt):
     return (int(input(prompt)))
 
@@ -110,20 +112,40 @@ def main():
     squirtle_moveset = [global_moveset["Tackle"], global_moveset["Water Gun"], global_moveset["Surf"]]
     swallow_moveset = [global_moveset["Tail Whip"], global_moveset["Air Slash"], global_moveset["Hurricane"]]
     charmander_moveset = [global_moveset["Earthquake"], global_moveset["Ember"], global_moveset["Flamethrower"]]
+    gardevoir_moveset = [global_moveset["Tail Whip"], global_moveset["Vine Whip"], global_moveset["Hurricane"]]
+    cyclops_moveset = [global_moveset["Tackle"], global_moveset["Shadow Ball"], global_moveset["Moon Blast"]]
 
-    pikachu_object_1 = pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock")
-    pikachu_object_2 = pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock")
-    squirtle_object_1 = pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric")
-    squirtle_object_2 = pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric")
-    swallow_object_1 = pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire")
-    swallow_object_2 = pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire")
-    charmander_object_1 = pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water")
-    charmander_object_2 = pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water")
+    pokemon_names = ["Pikachu", "Squirtle", "Swallow", "Charmander", "Gardevoir", "Cyclops"]
 
-    team_for_p1 = [pikachu_object_1, squirtle_object_1]
-    team_for_p2 = [squirtle_object_2, pikachu_object_2]
-    p1 = player("Onais", team_for_p1)
-    p2 = player("Zohaib", team_for_p2)
+    global_roster = {
+        1 : pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock"),
+        2 : pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric"),
+        3 : pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire"),
+        4 : pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water"),
+        5 : pokemon("Gardevoir", 35, 35, 4, 4, gardevoir_moveset, "Normal", "Fire"),
+        6 : pokemon("Cyclops", 45, 45, 5, 5, cyclops_moveset, "None", "None")
+    }
+
+    for idx, name in enumerate(pokemon_names):
+        print(f"{idx+1}.{name}")
+
+    team_for_p1 = []
+    team_for_p2 = []
+    
+    for i in range(3,0,-1):
+        choice = int(input(f"Pick a pokemon from the above list ({i} left): "))
+        team_for_p1.append(global_roster[choice])
+    
+    for i in range(3,0,-1):
+        choice = int(input(f"Pick a pokemon from the above list ({i} left): "))
+        team_for_p2.append(global_roster[choice])
+
+
+    player_name1 = input("Enter your name: ")
+    player_name2 = input("Enter your name: ")
+
+    p1 = player(player_name1, team_for_p1)
+    p2 = player(player_name2, team_for_p2)
 
     player_turn = False
     choice = 0
@@ -141,6 +163,9 @@ def main():
                         print(f"{idx+1}. {moves.name}")
                     choice = intput("Enter your choice: ")
                     print(f"\n{p1.name}'s {p1_current_pokemon.name} used {p1_current_pokemon.move_set[choice-1].name}")
+                    if(random.randint(1,100) > p1_current_pokemon.move_set[choice-1].accuracy):
+                        print("Attack Missed!")
+                        break
                     total_damage = 0
                     total_damage += p1_current_pokemon.move_set[choice-1].damage + p1_current_pokemon.attack_stat
                     total_damage -= p2_current_pokemon.defence_stat
@@ -177,7 +202,7 @@ def main():
                             print(f"{p1.name} sent out {p1_current_pokemon.name}")
                             continue
                         else:
-                            p1.victory_flag = True
+                            p2.victory_flag = True
                     break
 
                 elif(choice == 2):
@@ -190,7 +215,6 @@ def main():
                             f"HP is now {p1_current_pokemon.hitpoints}"
                             f"\n{p1.heal_count} heals remaining!")
                         break
-            # break
         else:
             while(1):
                 print(f"\n{p2.name}'s Turn")
@@ -202,6 +226,9 @@ def main():
                         print(f"{idx+1}. {moves.name}")
                     choice = intput("Enter your choice: ")
                     print(f"\n{p2.name}'s {p2_current_pokemon.name} used {p2_current_pokemon.move_set[choice-1].name}")
+                    if(random.randint(1,100) > p2_current_pokemon.move_set[choice-1].accuracy):
+                        print("Attack Missed!")
+                        break
                     total_damage = 0
                     total_damage += p2_current_pokemon.move_set[choice-1].damage + p2_current_pokemon.attack_stat
                     total_damage -= p1_current_pokemon.defence_stat
@@ -229,7 +256,7 @@ def main():
                             print(f"{p1.name} sent out {p1_current_pokemon.name}")
                             continue
                         else:
-                            p1.victory_flag = True
+                            p2.victory_flag = True
 
                     if(p2_current_pokemon.hitpoints <= 0):
                         print(f"{p2.name}'s {p2_current_pokemon.name} has died")
