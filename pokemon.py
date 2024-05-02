@@ -90,23 +90,35 @@ def main():
     global global_moveset
     global_moveset = {
         "Tail Whip": move("Tail Whip", 5, 0, 90, "Normal"),
-        "Lightning Bolt": move("Lightning Bolt", 10, 0, 80, "Electric"),
         "Tackle": move("Tackle", 7, 2, 95, "Normal"),
+        "Earthquake": move("Earthquake", 20, 2, 40, "Normal"),
+        "Thunder Wave": move("Thunder Wave", 12, 2, 75, "Electric"),
+        "Lightning Bolt": move("Lightning Bolt", 10, 0, 80, "Electric"),
+        "Surf": move("Surf", 12, 0, 70, "Water"),
         "Water Gun": move("Water Gun", 10, 0, 85, "Water"),
         "Ember": move("Ember", 15, 5, 60, "Fire"),
+        "Flamethrower": move("Flamethrower", 9, 0, 85, "Fire"),
         "Vine Whip": move("Vine Whip", 9, 0, 85, "Grass"),
-        "Rock Slide": move("Rock Slide", 12, 0, 75, "Rock")
+        "Rock Slide": move("Rock Slide", 12, 0, 75, "Rock"),
+        "Moon Blast": move("Moon Blast", 10, 1, 80, "Dark"),
+        "Shadow Ball": move("Shadow Ball", 10, 0, 75, "Dark"),
+        "Air Slash": move("Air Slash", 9, 0, 90, "Wind"),
+        "Hurricane": move("Hurricane", 13, 0, 75, "Wind")
     }
 
-    pikachu_moveset = [global_moveset["Tail Whip"], global_moveset["Lightning Bolt"]]
+    pikachu_moveset = [global_moveset["Tail Whip"], global_moveset["Lightning Bolt"], global_moveset["Thunder Wave"]]
+    squirtle_moveset = [global_moveset["Tackle"], global_moveset["Water Gun"], global_moveset["Surf"]]
+    swallow_moveset = [global_moveset["Tail Whip"], global_moveset["Air Slash"], global_moveset["Hurricane"]]
+    charmander_moveset = [global_moveset["Earthquake"], global_moveset["Ember"], global_moveset["Flamethrower"]]
+
     pikachu_object_1 = pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock")
     pikachu_object_2 = pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock")
-    squirtle_moveset = [global_moveset["Tackle"], global_moveset["Water Gun"]]
     squirtle_object_1 = pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric")
     squirtle_object_2 = pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric")
-
-    print(pikachu_object_1)
-    print(global_moveset["Ember"])
+    swallow_object_1 = pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire")
+    swallow_object_2 = pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire")
+    charmander_object_1 = pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water")
+    charmander_object_2 = pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water")
 
     team_for_p1 = [pikachu_object_1, squirtle_object_1]
     team_for_p2 = [squirtle_object_2, pikachu_object_2]
@@ -129,7 +141,15 @@ def main():
                         print(f"{idx+1}. {moves.name}")
                     choice = intput("Enter your choice: ")
                     print(f"\n{p1.name}'s {p1_current_pokemon.name} used {p1_current_pokemon.move_set[choice-1].name}")
-                    p2_current_pokemon.hitpoints -= (p1_current_pokemon.move_set[choice-1].damage + p1_current_pokemon.attack_stat - p2_current_pokemon.defence_stat)
+                    total_damage = 0
+                    total_damage += p1_current_pokemon.move_set[choice-1].damage + p1_current_pokemon.attack_stat
+                    total_damage -= p2_current_pokemon.defence_stat
+                    if(p1_current_pokemon.move_set[choice-1].move_type == p2_current_pokemon.weakness):
+                        print("Weakness attacked!")
+                        total_damage *= 1.5
+                    elif(p1_current_pokemon.move_set[choice-1].move_type == p2_current_pokemon.resistance):
+                        total_damage *= 0.5
+                    p2_current_pokemon.hitpoints -= total_damage
                     if p2_current_pokemon.hitpoints < 0:
                         p2_current_pokemon.hitpoints = 0
 
@@ -182,7 +202,15 @@ def main():
                         print(f"{idx+1}. {moves.name}")
                     choice = intput("Enter your choice: ")
                     print(f"\n{p2.name}'s {p2_current_pokemon.name} used {p2_current_pokemon.move_set[choice-1].name}")
-                    p1_current_pokemon.hitpoints -= (p2_current_pokemon.move_set[choice-1].damage+ p2_current_pokemon.attack_stat-p1_current_pokemon.defence_stat)
+                    total_damage = 0
+                    total_damage += p2_current_pokemon.move_set[choice-1].damage + p2_current_pokemon.attack_stat
+                    total_damage -= p1_current_pokemon.defence_stat
+                    if(p2_current_pokemon.move_set[choice-1].move_type == p1_current_pokemon.weakness):
+                        print("Weakness attacked!")
+                        total_damage *= 1.5
+                    elif(p2_current_pokemon.move_set[choice-1].move_type == p1_current_pokemon.resistance):
+                        total_damage *= 0.5
+                    p1_current_pokemon.hitpoints -= total_damage
                     if p1_current_pokemon.hitpoints < 0:
                         p1_current_pokemon.hitpoints = 0
 
