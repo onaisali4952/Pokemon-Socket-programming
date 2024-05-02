@@ -1,9 +1,5 @@
 import random
 
-def intput(prompt):
-    return (int(input(prompt)))
-
-
 class pokemon:
     def __init__(self, name, total_hitpoints, hitpoints, attack_stat, defence_stat, move_set, resistance, weakness) -> None:
         self.name = name
@@ -156,12 +152,12 @@ def main():
             while(1):
                 print(f"\n{p1.name}'s Turn")
                 print("1. Attack\n2. Heal pokemon")
-                choice = intput("Enter your choice: ")
+                choice = int(input("Enter your choice: "))
                 if(choice == 1):
                     print(f"Available moves for {p1.name}'s {p1_current_pokemon.name}")
                     for idx, moves in enumerate(p1_current_pokemon.move_set):
                         print(f"{idx+1}. {moves.name}")
-                    choice = intput("Enter your choice: ")
+                    choice = int(input("Enter your choice: "))
                     print(f"\n{p1.name}'s {p1_current_pokemon.name} used {p1_current_pokemon.move_set[choice-1].name}")
                     if(random.randint(1,100) > p1_current_pokemon.move_set[choice-1].accuracy):
                         print("Attack Missed!")
@@ -219,12 +215,12 @@ def main():
             while(1):
                 print(f"\n{p2.name}'s Turn")
                 print("1. Attack\n2. Heal pokemon")
-                choice = intput("Enter your choice: ")
+                choice = int(input("Enter your choice: "))
                 if(choice == 1):
                     print(f"Available moves for {p2.name}'s {p2_current_pokemon.name}")
                     for idx, moves in enumerate(p2_current_pokemon.move_set):
                         print(f"{idx+1}. {moves.name}")
-                    choice = intput("Enter your choice: ")
+                    choice = int(input("Enter your choice: "))
                     print(f"\n{p2.name}'s {p2_current_pokemon.name} used {p2_current_pokemon.move_set[choice-1].name}")
                     if(random.randint(1,100) > p2_current_pokemon.move_set[choice-1].accuracy):
                         print("Attack Missed!")
