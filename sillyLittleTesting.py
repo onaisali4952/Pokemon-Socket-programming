@@ -1,3 +1,7 @@
+import threading
+
+lock = threading.Lock()
+
 class Pokemon:
     def __init__(self, name, level, moves):
         self.name = name
