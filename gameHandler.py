@@ -92,19 +92,19 @@ global global_moveset
 global_moveset = {
     "Tail Whip": move("Tail Whip", 5, 0, 90, "Normal"),
     "Tackle": move("Tackle", 7, 2, 95, "Normal"),
-    "Earthquake": move("Earthquake", 20, 2, 40, "Normal"),
-    "Thunder Wave": move("Thunder Wave", 12, 2, 75, "Electric"),
-    "Lightning Bolt": move("Lightning Bolt", 10, 0, 80, "Electric"),
-    "Surf": move("Surf", 12, 0, 70, "Water"),
-    "Water Gun": move("Water Gun", 10, 0, 85, "Water"),
-    "Ember": move("Ember", 15, 5, 60, "Fire"),
-    "Flamethrower": move("Flamethrower", 9, 0, 85, "Fire"),
-    "Vine Whip": move("Vine Whip", 9, 0, 85, "Grass"),
-    "Rock Slide": move("Rock Slide", 12, 0, 75, "Rock"),
-    "Moon Blast": move("Moon Blast", 10, 1, 80, "Dark"),
-    "Shadow Ball": move("Shadow Ball", 10, 0, 75, "Dark"),
+    "Earthquake": move("Earthquake", 20, 2, 90, "Normal"),
+    "Thunder Wave": move("Thunder Wave", 12, 2, 90, "Electric"),
+    "Lightning Bolt": move("Lightning Bolt", 10, 0, 90, "Electric"),
+    "Surf": move("Surf", 12, 0, 90, "Water"),
+    "Water Gun": move("Water Gun", 10, 0, 90, "Water"),
+    "Ember": move("Ember", 15, 5, 90, "Fire"),
+    "Flamethrower": move("Flamethrower", 9, 0, 90, "Fire"),
+    "Vine Whip": move("Vine Whip", 9, 0, 90, "Grass"),
+    "Rock Slide": move("Rock Slide", 12, 0, 90, "Rock"),
+    "Moon Blast": move("Moon Blast", 10, 1, 90, "Dark"),
+    "Shadow Ball": move("Shadow Ball", 10, 0, 90, "Dark"),
     "Air Slash": move("Air Slash", 9, 0, 90, "Wind"),
-    "Hurricane": move("Hurricane", 13, 0, 75, "Wind")
+    "Hurricane": move("Hurricane", 13, 0, 90, "Wind")
 }
 
 pikachu_moveset = [global_moveset["Tail Whip"], global_moveset["Lightning Bolt"], global_moveset["Thunder Wave"]]
@@ -117,14 +117,16 @@ cyclops_moveset = [global_moveset["Tackle"], global_moveset["Shadow Ball"], glob
 pokemon_names = ["Pikachu", "Squirtle", "Swallow", "Charmander", "Gardevoir", "Cyclops"]
 
 global_roster = {
-    1 : pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock"),
-    2 : pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric"),
-    3 : pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire"),
-    4 : pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water"),
-    5 : pokemon("Gardevoir", 35, 35, 4, 4, gardevoir_moveset, "Normal", "Fire"),
-    6 : pokemon("Cyclops", 45, 45, 5, 5, cyclops_moveset, "None", "None")
+    1: lambda: pokemon("Pikachu", 30, 30, 6, 2, pikachu_moveset, "Electric", "Rock"),
+    2: lambda: pokemon("Squirtle", 40, 40, 4, 4, squirtle_moveset, "Water", "Electric"),
+    3: lambda: pokemon("Swallow", 40, 40, 5, 4, swallow_moveset, "Wind", "Fire"),
+    4: lambda: pokemon("Charmander", 50, 50, 3, 5, charmander_moveset, "Fire", "Water"),
+    5: lambda: pokemon("Gardevoir", 35, 35, 4, 4, gardevoir_moveset, "Normal", "Fire"),
+    6: lambda: pokemon("Cyclops", 45, 45, 5, 5, cyclops_moveset, "None", "None")
 }
 
+p1_poke_idx = 0
+p2_poke_idx = 0
 player_names_queue = queue.Queue()
 player_team_queue = queue.Queue()
 team_for_p1 = []
@@ -133,6 +135,7 @@ player_name1 = ""
 player_name2 = ""
 lock2 = threading.Lock()
 lock1 = threading.Lock()
+player_turn = 1
 
 def handle_client(client_socket, addr, player_id):
     print(f"Accepted connection from {addr} with player ID {player_id}")
@@ -156,8 +159,9 @@ def handle_client(client_socket, addr, player_id):
                 server_message = ""
                 client_message = client_socket.recv(1024).decode()
                 if(not (0 < int(client_message) < 6)):
+                    i += 1
                     continue
-                team_for_p1.append(global_roster[int(client_message)])
+                team_for_p1.append(global_roster[int(client_message)]())
         elif(player_id == 2):
             for i in range(3,0,-1):
                 server_message += f"Pick a pokemon from the above list ({i} left): "
@@ -166,7 +170,7 @@ def handle_client(client_socket, addr, player_id):
                 client_message = client_socket.recv(1024).decode()
                 if(not (0 < int(client_message) < 6)):
                     continue
-                team_for_p2.append(global_roster[int(client_message)])
+                team_for_p2.append(global_roster[int(client_message)]())
 
         with lock1:
             if(player_id == 1):
@@ -179,219 +183,220 @@ def handle_client(client_socket, addr, player_id):
     finally:
         pass
 
-def handle_game(client_socket, addr, player_id, p1, p2, p1_poke_idx, p2_poke_idx):
+def handle_game(client_socket, addr, player_id):
 
     print(f"Continued connection with {addr} with player ID {player_id}")
 
-    player_turn = 1
-    while(not p1.victory_flag and not p2.victory_flag):
-        if(player_id == 1):
-            server_message =(f"{p1.name}'s {p1.team[p1_poke_idx].name} HP: {p1.team[p1_poke_idx].hitpoints}\n"+
-                                f"{p2.name}'s {p2.team[p2_poke_idx].name} HP: {p2.team[p2_poke_idx].hitpoints}\n")
-            server_message += "\nEnter anything to proceed: "
-            client_socket.send(bytes(server_message, 'UTF-8'))
-            client_socket.recv(1024).decode()    
-            with lock1:
-                with lock2:        
-                    while(1):
-                        server_message =(f"{p1.name}'s {p1.team[p1_poke_idx].name} HP: {p1.team[p1_poke_idx].hitpoints}\n"+
-                                         f"{p2.name}'s {p2.team[p2_poke_idx].name} HP: {p2.team[p2_poke_idx].hitpoints}\n")
-                        server_message += "\n1. Attack\n2. Heal pokemon\nEnter your choice: "
+    global p1, p2, p1_poke_idx, p2_poke_idx, player_turn
+    while(1):
+        if(player_id == 1 and player_turn == 1):
+            if p1.victory_flag or p2.victory_flag:
+                break 
+            # time.sleep(1)
+            lock1.acquire(blocking=True)
+            print("Player 1 has acquired the lock")
+            while(1):
+                server_message =(f"{p1.name}'s {p1.team[p1_poke_idx].name} HP: {p1.team[p1_poke_idx].hitpoints}\n"+
+                                    f"{p2.name}'s {p2.team[p2_poke_idx].name} HP: {p2.team[p2_poke_idx].hitpoints}\n")
+                server_message += "\n1. Attack\n2. Heal pokemon\nEnter your choice: "
+                client_socket.send(bytes(server_message, 'UTF-8'))
+                server_message = ""
+                menu_choice = int(client_socket.recv(1024).decode())
+                if(menu_choice != 1 and menu_choice != 2):
+                    continue
+                if(menu_choice == 1):
+                    server_message = f"Available moves for {p1.name}'s {p1.team[p1_poke_idx].name}\n"
+                    for idx, moves in enumerate(p1.team[p1_poke_idx].move_set):
+                        server_message += f"{idx+1}.{moves.name}\n"
+                    server_message += "Enter your choice: "
+                    client_socket.send(bytes(server_message, 'UTF-8'))
+                    move_choice = int(client_socket.recv(1024).decode())
+                    server_message = f"\n{p1.name}'s {p1.team[p1_poke_idx].name} used {p1.team[p1_poke_idx].move_set[move_choice-1].name}"
+                    server_message += "\nEnter anything to proceed: "
+                    client_socket.send(bytes(server_message, 'UTF-8'))
+                    client_socket.recv(1024).decode()
+                    if(random.randint(1,100) > p1.team[p1_poke_idx].move_set[move_choice-1].accuracy):
+                        server_message = "\nAttack Missed!"
+                        server_message += "\nEnter anything to proceed: "
                         client_socket.send(bytes(server_message, 'UTF-8'))
-                        server_message = ""
-                        menu_choice = int(client_socket.recv(1024).decode())
-                        if(menu_choice != 1 and menu_choice != 2):
-                            continue
-                        if(menu_choice == 1):
-                            server_message = f"Available moves for {p1.name}'s {p1.team[p1_poke_idx].name}\n"
-                            for idx, moves in enumerate(p1.team[p1_poke_idx].move_set):
-                                server_message += f"{idx+1}.{moves.name}\n"
-                            server_message += "Enter your choice: "
-                            client_socket.send(bytes(server_message, 'UTF-8'))
-                            move_choice = int(client_socket.recv(1024).decode())
-                            server_message = f"\n{p1.name}'s {p1.team[p1_poke_idx].name} used {p1.team[p1_poke_idx].move_set[move_choice-1].name}"
+                        client_socket.recv(1024).decode()
+                        break
+                    total_damage = 0
+                    total_damage += p1.team[p1_poke_idx].move_set[move_choice-1].damage + p1.team[p1_poke_idx].attack_stat
+                    total_damage -= p2.team[p2_poke_idx].defence_stat
+                    if(p1.team[p1_poke_idx].move_set[move_choice-1].move_type == p2.team[p2_poke_idx].weakness):
+                        # server_message = "\nWeakness attacked!"
+                        # server_message += "\nEnter anything to proceed: "
+                        # client_socket.send(bytes(server_message, 'UTF-8'))
+                        # client_socket.recv(1024).decode()
+                        total_damage *= 1.5
+                    elif(p1.team[p1_poke_idx].move_set[move_choice-1].move_type == p2.team[p2_poke_idx].resistance):
+                        total_damage *= 0.5
+                    p2.team[p2_poke_idx].hitpoints -= total_damage
+                    if p2.team[p2_poke_idx].hitpoints < 0:
+                        p2.team[p2_poke_idx].hitpoints = 0
+
+                    p1.team[p1_poke_idx].hitpoints -= p1.team[p1_poke_idx].move_set[move_choice-1].self_damage
+                    if p1.team[p1_poke_idx].hitpoints < 0:
+                        p1.team[p1_poke_idx].hitpoints = 0
+
+                    if(p2.team[p2_poke_idx].hitpoints <= 0):
+                        server_message = f"\n{p2.name}'s {p2.team[p2_poke_idx].name} has died"
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                        p2_poke_idx += 1
+                        if(p2_poke_idx < 3):
+                            server_message = f"{p2.name} sent out {p2.team[p2_poke_idx].name}"
                             server_message += "\nEnter anything to proceed: "
                             client_socket.send(bytes(server_message, 'UTF-8'))
                             client_socket.recv(1024).decode()
-                            if(random.randint(1,100) > p1.team[p1_poke_idx].move_set[move_choice-1].accuracy):
-                                server_message = "\nAttack Missed!"
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                break
-                            total_damage = 0
-                            total_damage += p1.team[p1_poke_idx].move_set[move_choice-1].damage + p1.team[p1_poke_idx].attack_stat
-                            total_damage -= p2.team[p2_poke_idx].defence_stat
-                            if(p1.team[p1_poke_idx].move_set[move_choice-1].move_type == p2.team[p2_poke_idx].weakness):
-                                server_message = "\nWeakness attacked!"
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                total_damage *= 1.5
-                            elif(p1.team[p1_poke_idx].move_set[move_choice-1].move_type == p2.team[p2_poke_idx].resistance):
-                                total_damage *= 0.5
-                            p2.team[p2_poke_idx].hitpoints -= total_damage
-                            if p2.team[p2_poke_idx].hitpoints < 0:
-                                p2.team[p2_poke_idx].hitpoints = 0
+                            continue
+                        else:
+                            p1.victory_flag = True
 
-                            p1.team[p1_poke_idx].hitpoints -= p1.team[p1_poke_idx].move_set[move_choice-1].self_damage
-                            if p1.team[p1_poke_idx].hitpoints < 0:
-                                p1.team[p1_poke_idx].hitpoints = 0
-
-                            if(p2.team[p2_poke_idx].hitpoints <= 0):
-                                server_message = f"\n{p2.name}'s {p2.team[p2_poke_idx].name} has died"
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                p2_poke_idx += 1
-                                if(p2_poke_idx < 3):
-                                    server_message = f"{p2.name} sent out {p2.team[p2_poke_idx].name}"
-                                    server_message += "\nEnter anything to proceed: "
-                                    client_socket.send(bytes(server_message, 'UTF-8'))
-                                    client_socket.recv(1024).decode()
-                                    continue
-                                else:
-                                    p1.victory_flag = True
-
-                        elif(menu_choice == 2):
-                            if(p1.heal_count == 0):
-                                server_message = "No heals left!"
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                            else:
-                                p1.team[p1_poke_idx].hitpoints = min((p1.team[p1_poke_idx].hitpoints + 20), p1.team[p1_poke_idx].total_hitpoints)
-                                p1.heal_count -= 1
-                                server_message +=(f"Pokemon healed! "
-                                                    f"HP is now {p1.team[p1_poke_idx].hitpoints}"
-                                                    f"\n{p1.heal_count} heals remaining!\n"
-                                                    f"Enter anything to proceed: ")
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                break
+                elif(menu_choice == 2):
+                    if(p1.heal_count == 0):
+                        server_message = "No heals left!"
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                    else:
+                        p1.team[p1_poke_idx].hitpoints = min((p1.team[p1_poke_idx].hitpoints + 20), p1.team[p1_poke_idx].total_hitpoints)
+                        p1.heal_count -= 1
+                        server_message +=(f"Pokemon healed! "
+                                            f"HP is now {p1.team[p1_poke_idx].hitpoints}"
+                                            f"\n{p1.heal_count} heals remaining!\n"
+                                            f"Enter anything to proceed: ")
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
                         break
+                break
+            player_turn = 2
+            lock1.release()
+            print("Player 1 has released the lock")
+                
 
-        if(player_id == 2):
+        if(player_id == 2 and player_turn == 2): 
+            if p1.victory_flag or p2.victory_flag:
+                break   
+            # time.sleep(2)
+            lock1.acquire(blocking=True)
+            print("Player 2 has acquired the lock")
             server_message =(f"{p1.name}'s {p1.team[p1_poke_idx].name} HP: {p1.team[p1_poke_idx].hitpoints}\n"+
                                 f"{p2.name}'s {p2.team[p2_poke_idx].name} HP: {p2.team[p2_poke_idx].hitpoints}\n")
             server_message += "\nEnter anything to proceed: "
             client_socket.send(bytes(server_message, 'UTF-8'))
             client_socket.recv(1024).decode()
-            with lock2:
-                with lock1:
-                    while(1):
-                        server_message = "1. Attack\n2. Heal pokemon\nEnter your choice: "
+            while(1):
+                server_message = "1. Attack\n2. Heal pokemon\nEnter your choice: "
+                client_socket.send(bytes(server_message, 'UTF-8'))
+                menu_choice = int(client_socket.recv(1024).decode())
+                if(menu_choice != 1 and menu_choice != 2):
+                    continue
+                if(menu_choice == 1):
+                    server_message = (f"Available moves for {p2.name}'s {p2.team[p2_poke_idx].name}\n")
+                    for idx, moves in enumerate(p2.team[p2_poke_idx].move_set):
+                        server_message += f"{idx+1}.{moves.name}\n"
+                    server_message += "Enter your choice: "
+                    client_socket.send(bytes(server_message, 'UTF-8'))
+                    move_choice = int(client_socket.recv(1024).decode())
+                    server_message = (f"\n{p2.name}'s {p2.team[p2_poke_idx].name} used {p2.team[p2_poke_idx].move_set[move_choice-1].name}")
+                    server_message += "\nEnter anything to proceed: "
+                    client_socket.send(bytes(server_message, 'UTF-8'))
+                    client_socket.recv(1024).decode()
+                    if(random.randint(1,100) > p2.team[p2_poke_idx].move_set[move_choice-1].accuracy):
+                        server_message = ("Attack Missed!")
+                        server_message += "\nEnter anything to proceed: "
                         client_socket.send(bytes(server_message, 'UTF-8'))
-                        menu_choice = int(client_socket.recv(1024).decode())
-                        if(menu_choice != 1 and menu_choice != 2):
-                            continue
-                        if(menu_choice == 1):
-                            server_message = (f"Available moves for {p2.name}'s {p2.team[p2_poke_idx].name}")
-                            for idx, moves in enumerate(p2.team[p2_poke_idx].move_set):
-                                server_message += f"{idx+1}.{moves.name}\n"
-                            server_message += "Enter your choice: "
-                            client_socket.send(bytes(server_message, 'UTF-8'))
-                            move_choice = int(client_socket.recv(1024).decode())
-                            server_message = (f"\n{p2.name}'s {p2.team[p2_poke_idx].name} used {p2.team[p2_poke_idx].move_set[move_choice-1].name}")
+                        client_socket.recv(1024).decode()
+                        break
+                    total_damage = 0
+                    total_damage += p2.team[p2_poke_idx].move_set[move_choice-1].damage + p2.team[p2_poke_idx].attack_stat
+                    total_damage -= p1.team[p1_poke_idx].defence_stat
+                    if(p2.team[p2_poke_idx].move_set[move_choice-1].move_type == p1.team[p1_poke_idx].weakness):
+                        # server_message = ("Weakness attacked!")
+                        # server_message += "\nEnter anything to proceed: "
+                        # client_socket.send(bytes(server_message, 'UTF-8'))
+                        # client_socket.recv(1024).decode()
+                        total_damage *= 1.5
+                    elif(p2.team[p2_poke_idx].move_set[move_choice-1].move_type == p1.team[p1_poke_idx].resistance):
+                        total_damage *= 0.5
+                    p1.team[p1_poke_idx].hitpoints -= total_damage
+                    if p1.team[p1_poke_idx].hitpoints < 0:
+                        p1.team[p1_poke_idx].hitpoints = 0
+
+                    p2.team[p2_poke_idx].hitpoints -= p2.team[p2_poke_idx].move_set[move_choice-1].self_damage
+                    if p2.team[p2_poke_idx].hitpoints < 0:
+                        p2.team[p2_poke_idx].hitpoints = 0
+
+                            
+                    if(p1.team[p1_poke_idx].hitpoints <= 0):
+                        server_message = (f"{p1.name}'s {p1.team[p1_poke_idx].name} has died")
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                        p1.team[p1_poke_idx].alive_flag = False
+                        p1_poke_idx += 1
+                        if p1_poke_idx < 3:
+                            server_message = (f"{p1.name} sent out {p1.team[p1_poke_idx].name}")
                             server_message += "\nEnter anything to proceed: "
                             client_socket.send(bytes(server_message, 'UTF-8'))
                             client_socket.recv(1024).decode()
-                            if(random.randint(1,100) > p2.team[p2_poke_idx].move_set[move_choice-1].accuracy):
-                                server_message = ("Attack Missed!")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                break
-                            total_damage = 0
-                            total_damage += p2.team[p2_poke_idx].move_set[move_choice-1].damage + p2.team[p2_poke_idx].attack_stat
-                            total_damage -= p1.team[p1_poke_idx].defence_stat
-                            if(p2.team[p2_poke_idx].move_set[move_choice-1].move_type == p1.team[p1_poke_idx].weakness):
-                                server_message = ("Weakness attacked!")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                total_damage *= 1.5
-                            elif(p2.team[p2_poke_idx].move_set[move_choice-1].move_type == p1.team[p1_poke_idx].resistance):
-                                total_damage *= 0.5
-                            p1.team[p1_poke_idx].hitpoints -= total_damage
-                            if p1.team[p1_poke_idx].hitpoints < 0:
-                                p1.team[p1_poke_idx].hitpoints = 0
+                            continue
+                        else:
+                            p2.victory_flag = True
 
-                            p2.team[p2_poke_idx].hitpoints -= p2.team[p2_poke_idx].move_set[move_choice-1].self_damage
-                            if p2.team[p2_poke_idx].hitpoints < 0:
-                                p2.team[p2_poke_idx].hitpoints = 0
+                    if(p2.team[p2_poke_idx].hitpoints <= 0):
+                        server_message = (f"{p2.name}'s {p2.team[p2_poke_idx].name} has died")
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                        p2_poke_idx += 1
+                        if p2_poke_idx < 3:
+                            server_message = (f"{p2.name} sent out {p2.team[p2_poke_idx].name}")
+                            server_message += "\nEnter anything to proceed: "
+                            client_socket.send(bytes(server_message, 'UTF-8'))
+                            client_socket.recv(1024).decode()
+                            continue
+                        else:
+                            p1.victory_flag = True
+                    break
 
-                                    
-                            if(p1.team[p1_poke_idx].hitpoints <= 0):
-                                server_message = (f"{p1.name}'s {p1.team[p1_poke_idx].name} has died")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                p1.team[p1_poke_idx].alive_flag = False
-                                p1_poke_idx += 1
-                                if p1_poke_idx < 3:
-                                    server_message = (f"{p1.name} sent out {p1.team[p1_poke_idx].name}")
-                                    server_message += "\nEnter anything to proceed: "
-                                    client_socket.send(bytes(server_message, 'UTF-8'))
-                                    client_socket.recv(1024).decode()
-                                    continue
-                                else:
-                                    p2.victory_flag = True
-
-                            if(p2.team[p2_poke_idx].hitpoints <= 0):
-                                server_message = (f"{p2.name}'s {p2.team[p2_poke_idx].name} has died")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                p2_poke_idx += 1
-                                if p2_poke_idx < 3:
-                                    server_message = (f"{p2.name} sent out {p2.team[p2_poke_idx].name}")
-                                    server_message += "\nEnter anything to proceed: "
-                                    client_socket.send(bytes(server_message, 'UTF-8'))
-                                    client_socket.recv(1024).decode()
-                                    continue
-                                else:
-                                    p1.victory_flag = True
-                            break
-
-                        elif(menu_choice == 2):
-                            if(p2.heal_count == 0):
-                                server_message = ("No heals left!")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                            else:
-                                p2.team[p2_poke_idx].hitpoints = min((p2.team[p2_poke_idx].hitpoints + 20), p2.team[p2_poke_idx].total_hitpoints)
-                                p2.heal_count -= 1
-                                server_message = (f"Pokemon healed! "
-                                    f"HP is now {p2.team[p2_poke_idx].hitpoints}"
-                                    f"\n{p2.heal_count} heals remaining!")
-                                server_message += "\nEnter anything to proceed: "
-                                client_socket.send(bytes(server_message, 'UTF-8'))
-                                client_socket.recv(1024).decode()
-                                break
-                        break            
-
-        server_message = (f"{p1.name}'s {p1.team[p1_poke_idx].name} HP: {p1.team[p1_poke_idx].hitpoints}\n"
-                          f"{p2.name}'s {p2.team[p2_poke_idx].name} HP: {p2.team[p2_poke_idx].hitpoints}\n")
-        server_message += "\nEnter anything to proceed: "
-        client_socket.send(bytes(server_message, 'UTF-8'))
-        client_socket.recv(1024).decode()
-
-        if(p1.victory_flag and not p2.victory_flag):
-            server_message = (f"{p1.name} wins!")
-            break
-        elif(p2.victory_flag and not p1.victory_flag):
-            server_message = (f"{p2.name} wins!")
-            break
-        elif(p2.victory_flag and p1.victory_flag):
-            server_message = ("Its a draw!")
-            break
-
-        if(player_turn == 1):
-            player_turn = 2
-        else:
+                elif(menu_choice == 2):
+                    if(p2.heal_count == 0):
+                        server_message = ("No heals left!")
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                    else:
+                        p2.team[p2_poke_idx].hitpoints = min((p2.team[p2_poke_idx].hitpoints + 20), p2.team[p2_poke_idx].total_hitpoints)
+                        p2.heal_count -= 1
+                        server_message = (f"Pokemon healed! "
+                            f"HP is now {p2.team[p2_poke_idx].hitpoints}"
+                            f"\n{p2.heal_count} heals remaining!")
+                        server_message += "\nEnter anything to proceed: "
+                        client_socket.send(bytes(server_message, 'UTF-8'))
+                        client_socket.recv(1024).decode()
+                        break
+                break
             player_turn = 1
+            lock1.release()
+            print("Player 2 has released the lock")
+
+    if(p1.victory_flag and not p2.victory_flag):
+        server_message = (f"{p1.name} wins!")
+        
+    elif(p2.victory_flag and not p1.victory_flag):
+        server_message = (f"{p2.name} wins!")
+        
+    elif(p2.victory_flag and p1.victory_flag):
+        server_message = ("Its a draw!")
+
+    client_socket.send(bytes(server_message, 'UTF-8'))
+    return
+
+
 
 # Main function
 def main():    
@@ -424,20 +429,22 @@ def main():
         player_team_queue.put(team_for_p1)
         team_for_p2 = player_team_queue.get()
         player_team_queue.put(team_for_p2)
+        global p1
         p1 = player(player_name1, team_for_p1)
-        p2 = player(player_name2, team_for_p2)
+        global p2
+        p2= player(player_name2, team_for_p2)
 
         player_id = 1
         client_handlers = []
         while player_id <= 2:
-            # client_socket, addr = server_socket.accept()   
-            game_client_handler = threading.Thread(target=handle_game, args=(client_socket[player_id], addr[player_id], player_id, p1, p2, 0, 0))
+            game_client_handler = threading.Thread(target=handle_game, args=(client_socket[player_id], addr[player_id], player_id))
             client_handlers.append(game_client_handler)
             game_client_handler.start()
             player_id += 1
 
         for clients in client_handlers:
             clients.join()
+            print(f"Connection closed")
 
     except KeyboardInterrupt:
         print("Server shutting down.")
