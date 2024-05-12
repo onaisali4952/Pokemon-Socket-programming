@@ -1,15 +1,15 @@
 import socket
 
-socket2 = socket.socket()
-socket2.connect(('localhost', 9999))
+socket1 = socket.socket()
+socket1.connect(('localhost', 9999))
 
 while 1:
-    response = socket2.recv(1024).decode()
-    print(response)
+    server_message = socket1.recv(1024).decode()
+    print(server_message)
 
-    message = input("Enter message: ")
-    socket2.send(bytes(message, 'UTF-8'))
-    if(message.lower() == "exit"):
+    client_message = input()
+    socket1.send(bytes(client_message, 'UTF-8'))
+    if(client_message.lower() == "exit"):
         break
 
-socket2.close() 
+socket1.close() 
